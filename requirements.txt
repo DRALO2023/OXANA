@@ -6,3 +6,4 @@ seaborn
 scipy
 statannotations
 statsmodels
+xlsxwriter
