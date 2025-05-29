@@ -122,87 +122,252 @@ if 'anova_interaction_plot_figures' not in st.session_state:
     st.session_state['anova_interaction_plot_figures'] = None
 
 # Analysis and Plotting Functions for Dark Phase
+# def perform_dark_phase_analysis(df_dark_input, vars_to_analyze=['DO2', 'DCO2', 'RER', 'HEAT', 'XTOT']):
+#     if df_dark_input is None or df_dark_input.empty:
+#         return None 
+    
+#     df_dark = df_dark_input.copy()
+#     print(df_dark.head)
+#     print(df_dark.columns)
+
+#     essential_cols = ['CHAN', 'Date', 'Genotype', 'FEED1']
+#     for col in essential_cols:
+#         if col not in df_dark.columns:
+#             st.error(f"Dark Phase Analysis: Essential column '{col}' is missing. Cannot proceed.")
+#             return None 
+    
+#     current_vars_to_analyze = [var for var in vars_to_analyze if var in df_dark.columns]
+#     if not current_vars_to_analyze:
+#         st.error("Dark Phase Analysis: None of the specified variables for analysis are present in the data.")
+#         return None 
+        
+#     try:
+#         daily_feed_sum = df_dark.groupby(['CHAN', 'Date', 'Genotype'])['FEED1'].sum().reset_index(name='Daily_Total_FEED1')
+#         daily_feed_sum = daily_feed_sum.sort_values(['CHAN', 'Date'])
+#     except KeyError as e:
+#         st.error(f"Dark Phase Analysis: Error grouping for daily feed. Missing column: {e}")
+#         return None
+
+#     if 'CHAN' in daily_feed_sum.columns and 'Daily_Total_FEED1' in daily_feed_sum.columns:
+#         daily_feed_sum['Cumulative_Daily_FEED1'] = daily_feed_sum.groupby('CHAN')['Daily_Total_FEED1'].cumsum()
+#     else:
+#         daily_feed_sum['Cumulative_Daily_FEED1'] = np.nan
+
+
+#     avg_daily_feed = daily_feed_sum.groupby(['CHAN', 'Genotype'])['Daily_Total_FEED1'].mean().reset_index(name='Avg_Daily_FEED1')
+#     import numpy as np
+#     import pandas as pd
+#     summary_list = []
+#     df_dark_wt_ko = df_dark[df_dark['Genotype'].isin(['WT', 'KO'])]
+#     print("df_dark_wt_ko preview:")
+#     print(df_dark_wt_ko.head())
+
+#     if df_dark_wt_ko.empty:
+#         st.warning("Dark Phase Analysis: No data found for WT or KO genotypes.")
+
+#     for var in current_vars_to_analyze:
+#         print(f"\n--- Analyzing variable: '{var}' ---")
+        
+#         if var not in df_dark_wt_ko.columns:
+#             print(f"⚠️ Skipping '{var}' — not found in dataframe columns.")
+#             continue
+
+#         for genotype_to_check in ['WT', 'KO']: 
+#             print(f"Processing genotype: {genotype_to_check}")
+            
+#             if genotype_to_check in df_dark_wt_ko['Genotype'].unique():
+#                 raw_data = df_dark_wt_ko[df_dark_wt_ko['Genotype'] == genotype_to_check][var]
+#                 print(f"Raw data (first 5 rows) for {var} - {genotype_to_check}:\n{raw_data.head().tolist()}")
+
+#                 data = pd.to_numeric(raw_data, errors='coerce').dropna()
+#                 print(f"Cleaned numeric data (first 5 rows) for {var} - {genotype_to_check}:\n{data.head().tolist()}")
+#                 print(f"Number of valid numeric entries: {len(data)}")
+
+#                 if not data.empty:
+#                     mean_val = data.mean()
+#                     sem_val = data.sem()
+#                     print(f"✅ Mean: {mean_val:.4f}, SEM: {sem_val:.4f}")
+#                     summary_list.append({
+#                         'variable': var,
+#                         'Genotype': genotype_to_check,
+#                         'mean': mean_val,
+#                         'sem': sem_val
+#                     })
+#                 else:
+#                     print(f"⚠️ No valid numeric data for {var} - {genotype_to_check}.")
+#                     summary_list.append({
+#                         'variable': var,
+#                         'Genotype': genotype_to_check,
+#                         'mean': np.nan,
+#                         'sem': np.nan
+#                     })
+#             else:
+#                 print(f"⚠️ Genotype '{genotype_to_check}' not found in data.")
+#                 summary_list.append({
+#                     'variable': var,
+#                     'Genotype': genotype_to_check,
+#                     'mean': np.nan,
+#                     'sem': np.nan
+#                 })
+
+#     print("\n✅ Summary List:")
+#     for entry in summary_list:
+#         print(entry)
+
+#     summary_df = pd.DataFrame(summary_list)
+#     print("\n✅ Summary DataFrame Preview:")
+#     print(summary_df.head())
+
+#     ttest_results = []
+
+#     print("🔍 Starting T-test analysis...")
+
+#     # Check for WT and KO in df_dark_wt_ko
+#     if not df_dark_wt_ko.empty and set(['WT', 'KO']).issubset(df_dark_wt_ko['Genotype'].unique()):
+#         print("✅ Dark phase data contains both WT and KO genotypes.")
+        
+#         for var in current_vars_to_analyze:
+#             print(f"\nAnalyzing variable: {var}")
+
+#             data_wt = pd.to_numeric(df_dark_wt_ko[df_dark_wt_ko['Genotype'] == 'WT'][var], errors='coerce').dropna()
+#             data_ko = pd.to_numeric(df_dark_wt_ko[df_dark_wt_ko['Genotype'] == 'KO'][var], errors='coerce').dropna()
+            
+#             print(f"WT sample size: {len(data_wt)}, KO sample size: {len(data_ko)}")
+
+#             if len(data_wt) >= 2 and len(data_ko) >= 2:
+#                 try:
+#                     t_stat, p_val = ttest_ind(data_wt, data_ko, equal_var=False, nan_policy='omit')
+#                     d = cohen_d(data_wt, data_ko)
+#                     star = significance_stars(p_val)
+#                     print(f"T-test success: t={t_stat:.3f}, p={p_val:.4g}, Cohen's d={d:.3f}, significance={star}")
+#                     ttest_results.append({
+#                         'variable': var,
+#                         't_stat': t_stat,
+#                         'p_value': p_val,
+#                         'significance': star,
+#                         'cohen_d': d
+#                     })
+#                 except Exception as e:
+#                     st.warning(f"T-test failed for variable {var} in dark phase: {e}")
+#                     print(f"⚠️ T-test failed for {var}: {e}")
+#                     ttest_results.append({'variable': var, 't_stat': np.nan, 'p_value': np.nan, 'significance': 'error', "cohen_d": np.nan})
+#             else:
+#                 print(f"⚠️ Not enough data for variable {var} (WT: {len(data_wt)}, KO: {len(data_ko)}). Skipping.")
+
+#     # T-test on average daily feed
+#     if not avg_daily_feed.empty and 'Genotype' in avg_daily_feed.columns and 'Avg_Daily_FEED1' in avg_daily_feed.columns:
+#         avg_daily_feed_wt_ko = avg_daily_feed[avg_daily_feed['Genotype'].isin(['WT', 'KO'])]
+#         if set(['WT', 'KO']).issubset(avg_daily_feed_wt_ko['Genotype'].unique()):
+#             avg_feed_wt = pd.to_numeric(avg_daily_feed_wt_ko[avg_daily_feed_wt_ko['Genotype'] == 'WT']['Avg_Daily_FEED1'], errors='coerce').dropna()
+#             avg_feed_ko = pd.to_numeric(avg_daily_feed_wt_ko[avg_daily_feed_wt_ko['Genotype'] == 'KO']['Avg_Daily_FEED1'], errors='coerce').dropna()
+
+#             print(f"\nAnalyzing Avg_Daily_FEED1 - WT: {len(avg_feed_wt)}, KO: {len(avg_feed_ko)}")
+
+#             if len(avg_feed_wt) >= 2 and len(avg_feed_ko) >= 2:
+#                 try:
+#                     t_stat_feed, p_val_feed = ttest_ind(avg_feed_wt, avg_feed_ko, equal_var=False, nan_policy='omit')
+#                     d_feed = cohen_d(avg_feed_wt, avg_feed_ko)
+#                     star_feed = significance_stars(p_val_feed)
+#                     print(f"Avg_Daily_FEED1 t={t_stat_feed:.3f}, p={p_val_feed:.4g}, d={d_feed:.3f}, sig={star_feed}")
+#                     ttest_results.append({
+#                         'variable': 'Avg_Daily_FEED1',
+#                         't_stat': t_stat_feed,
+#                         'p_value': p_val_feed,
+#                         'significance': star_feed,
+#                         'cohen_d': d_feed
+#                     })
+#                 except Exception as e:
+#                     st.warning(f"T-test failed for Avg_Daily_FEED1 in dark phase: {e}")
+#                     print(f"⚠️ T-test failed for Avg_Daily_FEED1: {e}")
+#                     ttest_results.append({'variable': 'Avg_Daily_FEED1', 't_stat': np.nan, 'p_value': np.nan, 'significance': 'error', "cohen_d": np.nan})
+#             else:
+#                 print("⚠️ Not enough data for Avg_Daily_FEED1. Skipping.")
+
+#     else:
+#         print("⚠️ avg_daily_feed is missing required columns or is empty.")
+
+#     # Convert results to DataFrame
+#     ttest_df = pd.DataFrame(ttest_results)
+#     print("✅ T-test analysis complete.")
+
+#     # Outlier Detection
+#     if not avg_daily_feed.empty and 'Avg_Daily_FEED1' in avg_daily_feed.columns:
+#         Q1 = avg_daily_feed['Avg_Daily_FEED1'].quantile(0.25)
+#         Q3 = avg_daily_feed['Avg_Daily_FEED1'].quantile(0.75)
+#         IQR = Q3 - Q1
+#         if pd.isna(IQR) or IQR == 0:
+#             avg_daily_feed['Outlier'] = False
+#             print("⚠️ IQR is 0 or NaN, marking all as non-outliers.")
+#         else:
+#             lower_bound = Q1 - 1.5 * IQR
+#             upper_bound = Q3 + 1.5 * IQR
+#             avg_daily_feed['Outlier'] = (avg_daily_feed['Avg_Daily_FEED1'] < lower_bound) | (avg_daily_feed['Avg_Daily_FEED1'] > upper_bound)
+#             outlier_count = avg_daily_feed['Outlier'].sum()
+#             print(f"✅ Outlier detection complete. {outlier_count} outliers found.")
+#     elif not avg_daily_feed.empty:
+#         avg_daily_feed['Outlier'] = False
+#         print("⚠️ Avg_Daily_FEED1 column not found, marking all as non-outliers.")
+
+#     # Return the analysis results
+#     return {
+#         'summary_df': summary_df,
+#         'ttest_df': ttest_df,
+#         'avg_daily_feed': avg_daily_feed,
+#         'cumulative_feed_data_for_plot': daily_feed_sum
+#     }
 def perform_dark_phase_analysis(df_dark_input, vars_to_analyze=['DO2', 'DCO2', 'RER', 'HEAT', 'XTOT']):
+    import pandas as pd
+    import numpy as np
+    from scipy.stats import ttest_ind
+
     if df_dark_input is None or df_dark_input.empty:
         return None 
     
     df_dark = df_dark_input.copy()
-    print(df_dark.head)
-    print(df_dark.columns)
-
+    
     essential_cols = ['CHAN', 'Date', 'Genotype', 'FEED1']
     for col in essential_cols:
         if col not in df_dark.columns:
             st.error(f"Dark Phase Analysis: Essential column '{col}' is missing. Cannot proceed.")
             return None 
-    
+
+    # Filter only the necessary columns to avoid unnecessary memory usage
     current_vars_to_analyze = [var for var in vars_to_analyze if var in df_dark.columns]
     if not current_vars_to_analyze:
         st.error("Dark Phase Analysis: None of the specified variables for analysis are present in the data.")
         return None 
-        
-    try:
-        daily_feed_sum = df_dark.groupby(['CHAN', 'Date', 'Genotype'])['FEED1'].sum().reset_index(name='Daily_Total_FEED1')
-        daily_feed_sum = daily_feed_sum.sort_values(['CHAN', 'Date'])
-    except KeyError as e:
-        st.error(f"Dark Phase Analysis: Error grouping for daily feed. Missing column: {e}")
-        return None
 
-    if 'CHAN' in daily_feed_sum.columns and 'Daily_Total_FEED1' in daily_feed_sum.columns:
-        daily_feed_sum['Cumulative_Daily_FEED1'] = daily_feed_sum.groupby('CHAN')['Daily_Total_FEED1'].cumsum()
-    else:
-        daily_feed_sum['Cumulative_Daily_FEED1'] = np.nan
+    # Step 1: Compute daily averages per animal (CHAN)
+    daily_avg = df_dark.groupby(['CHAN', 'Date', 'Genotype'])[current_vars_to_analyze].mean().reset_index()
 
+    # Also compute daily total feed
+    daily_feed_sum = df_dark.groupby(['CHAN', 'Date', 'Genotype'])['FEED1'].sum().reset_index(name='Daily_Total_FEED1')
+    daily_feed_sum = daily_feed_sum.sort_values(['CHAN', 'Date'])
+    daily_feed_sum['Cumulative_Daily_FEED1'] = daily_feed_sum.groupby('CHAN')['Daily_Total_FEED1'].cumsum()
 
+    # Merge feed data with variable averages
+    daily_avg = pd.merge(daily_avg, daily_feed_sum, on=['CHAN', 'Date', 'Genotype'], how='left')
+
+    # Compute average daily feed per genotype
     avg_daily_feed = daily_feed_sum.groupby(['CHAN', 'Genotype'])['Daily_Total_FEED1'].mean().reset_index(name='Avg_Daily_FEED1')
-    import numpy as np
-    import pandas as pd
-    summary_list = []
-    df_dark_wt_ko = df_dark[df_dark['Genotype'].isin(['WT', 'KO'])]
-    print("df_dark_wt_ko preview:")
-    print(df_dark_wt_ko.head())
 
-    if df_dark_wt_ko.empty:
-        st.warning("Dark Phase Analysis: No data found for WT or KO genotypes.")
+    # Begin summary and t-test analysis
+    summary_list = []
+    df_dark_wt_ko = daily_avg[daily_avg['Genotype'].isin(['WT', 'KO'])]
 
     for var in current_vars_to_analyze:
-        print(f"\n--- Analyzing variable: '{var}' ---")
-        
-        if var not in df_dark_wt_ko.columns:
-            print(f"⚠️ Skipping '{var}' — not found in dataframe columns.")
-            continue
+        for genotype_to_check in ['WT', 'KO']:
+            data = df_dark_wt_ko[df_dark_wt_ko['Genotype'] == genotype_to_check][var]
+            data = pd.to_numeric(data, errors='coerce').dropna()
 
-        for genotype_to_check in ['WT', 'KO']: 
-            print(f"Processing genotype: {genotype_to_check}")
-            
-            if genotype_to_check in df_dark_wt_ko['Genotype'].unique():
-                raw_data = df_dark_wt_ko[df_dark_wt_ko['Genotype'] == genotype_to_check][var]
-                print(f"Raw data (first 5 rows) for {var} - {genotype_to_check}:\n{raw_data.head().tolist()}")
-
-                data = pd.to_numeric(raw_data, errors='coerce').dropna()
-                print(f"Cleaned numeric data (first 5 rows) for {var} - {genotype_to_check}:\n{data.head().tolist()}")
-                print(f"Number of valid numeric entries: {len(data)}")
-
-                if not data.empty:
-                    mean_val = data.mean()
-                    sem_val = data.sem()
-                    print(f"✅ Mean: {mean_val:.4f}, SEM: {sem_val:.4f}")
-                    summary_list.append({
-                        'variable': var,
-                        'Genotype': genotype_to_check,
-                        'mean': mean_val,
-                        'sem': sem_val
-                    })
-                else:
-                    print(f"⚠️ No valid numeric data for {var} - {genotype_to_check}.")
-                    summary_list.append({
-                        'variable': var,
-                        'Genotype': genotype_to_check,
-                        'mean': np.nan,
-                        'sem': np.nan
-                    })
+            if not data.empty:
+                summary_list.append({
+                    'variable': var,
+                    'Genotype': genotype_to_check,
+                    'mean': data.mean(),
+                    'sem': data.sem()
+                })
             else:
-                print(f"⚠️ Genotype '{genotype_to_check}' not found in data.")
                 summary_list.append({
                     'variable': var,
                     'Genotype': genotype_to_check,
@@ -210,111 +375,62 @@ def perform_dark_phase_analysis(df_dark_input, vars_to_analyze=['DO2', 'DCO2', '
                     'sem': np.nan
                 })
 
-    print("\n✅ Summary List:")
-    for entry in summary_list:
-        print(entry)
-
     summary_df = pd.DataFrame(summary_list)
-    print("\n✅ Summary DataFrame Preview:")
-    print(summary_df.head())
 
+    # T-test results
     ttest_results = []
+    for var in current_vars_to_analyze:
+        data_wt = df_dark_wt_ko[df_dark_wt_ko['Genotype'] == 'WT'][var].dropna()
+        data_ko = df_dark_wt_ko[df_dark_wt_ko['Genotype'] == 'KO'][var].dropna()
+        if len(data_wt) >= 2 and len(data_ko) >= 2:
+            t_stat, p_val = ttest_ind(data_wt, data_ko, equal_var=False, nan_policy='omit')
+            d = cohen_d(data_wt, data_ko)
+            star = significance_stars(p_val)
+            ttest_results.append({
+                'variable': var,
+                't_stat': t_stat,
+                'p_value': p_val,
+                'significance': star,
+                'cohen_d': d
+            })
 
-    print("🔍 Starting T-test analysis...")
+    # Do the same for Avg_Daily_FEED1
+    avg_daily_feed_wt_ko = avg_daily_feed[avg_daily_feed['Genotype'].isin(['WT', 'KO'])]
+    if set(['WT', 'KO']).issubset(avg_daily_feed_wt_ko['Genotype'].unique()):
+        avg_feed_wt = avg_daily_feed_wt_ko[avg_daily_feed_wt_ko['Genotype'] == 'WT']['Avg_Daily_FEED1']
+        avg_feed_ko = avg_daily_feed_wt_ko[avg_daily_feed_wt_ko['Genotype'] == 'KO']['Avg_Daily_FEED1']
+        if len(avg_feed_wt) >= 2 and len(avg_feed_ko) >= 2:
+            t_stat_feed, p_val_feed = ttest_ind(avg_feed_wt, avg_feed_ko, equal_var=False, nan_policy='omit')
+            d_feed = cohen_d(avg_feed_wt, avg_feed_ko)
+            star_feed = significance_stars(p_val_feed)
+            ttest_results.append({
+                'variable': 'Avg_Daily_FEED1',
+                't_stat': t_stat_feed,
+                'p_value': p_val_feed,
+                'significance': star_feed,
+                'cohen_d': d_feed
+            })
 
-    # Check for WT and KO in df_dark_wt_ko
-    if not df_dark_wt_ko.empty and set(['WT', 'KO']).issubset(df_dark_wt_ko['Genotype'].unique()):
-        print("✅ Dark phase data contains both WT and KO genotypes.")
-        
-        for var in current_vars_to_analyze:
-            print(f"\nAnalyzing variable: {var}")
-
-            data_wt = pd.to_numeric(df_dark_wt_ko[df_dark_wt_ko['Genotype'] == 'WT'][var], errors='coerce').dropna()
-            data_ko = pd.to_numeric(df_dark_wt_ko[df_dark_wt_ko['Genotype'] == 'KO'][var], errors='coerce').dropna()
-            
-            print(f"WT sample size: {len(data_wt)}, KO sample size: {len(data_ko)}")
-
-            if len(data_wt) >= 2 and len(data_ko) >= 2:
-                try:
-                    t_stat, p_val = ttest_ind(data_wt, data_ko, equal_var=False, nan_policy='omit')
-                    d = cohen_d(data_wt, data_ko)
-                    star = significance_stars(p_val)
-                    print(f"T-test success: t={t_stat:.3f}, p={p_val:.4g}, Cohen's d={d:.3f}, significance={star}")
-                    ttest_results.append({
-                        'variable': var,
-                        't_stat': t_stat,
-                        'p_value': p_val,
-                        'significance': star,
-                        'cohen_d': d
-                    })
-                except Exception as e:
-                    st.warning(f"T-test failed for variable {var} in dark phase: {e}")
-                    print(f"⚠️ T-test failed for {var}: {e}")
-                    ttest_results.append({'variable': var, 't_stat': np.nan, 'p_value': np.nan, 'significance': 'error', "cohen_d": np.nan})
-            else:
-                print(f"⚠️ Not enough data for variable {var} (WT: {len(data_wt)}, KO: {len(data_ko)}). Skipping.")
-
-    # T-test on average daily feed
-    if not avg_daily_feed.empty and 'Genotype' in avg_daily_feed.columns and 'Avg_Daily_FEED1' in avg_daily_feed.columns:
-        avg_daily_feed_wt_ko = avg_daily_feed[avg_daily_feed['Genotype'].isin(['WT', 'KO'])]
-        if set(['WT', 'KO']).issubset(avg_daily_feed_wt_ko['Genotype'].unique()):
-            avg_feed_wt = pd.to_numeric(avg_daily_feed_wt_ko[avg_daily_feed_wt_ko['Genotype'] == 'WT']['Avg_Daily_FEED1'], errors='coerce').dropna()
-            avg_feed_ko = pd.to_numeric(avg_daily_feed_wt_ko[avg_daily_feed_wt_ko['Genotype'] == 'KO']['Avg_Daily_FEED1'], errors='coerce').dropna()
-
-            print(f"\nAnalyzing Avg_Daily_FEED1 - WT: {len(avg_feed_wt)}, KO: {len(avg_feed_ko)}")
-
-            if len(avg_feed_wt) >= 2 and len(avg_feed_ko) >= 2:
-                try:
-                    t_stat_feed, p_val_feed = ttest_ind(avg_feed_wt, avg_feed_ko, equal_var=False, nan_policy='omit')
-                    d_feed = cohen_d(avg_feed_wt, avg_feed_ko)
-                    star_feed = significance_stars(p_val_feed)
-                    print(f"Avg_Daily_FEED1 t={t_stat_feed:.3f}, p={p_val_feed:.4g}, d={d_feed:.3f}, sig={star_feed}")
-                    ttest_results.append({
-                        'variable': 'Avg_Daily_FEED1',
-                        't_stat': t_stat_feed,
-                        'p_value': p_val_feed,
-                        'significance': star_feed,
-                        'cohen_d': d_feed
-                    })
-                except Exception as e:
-                    st.warning(f"T-test failed for Avg_Daily_FEED1 in dark phase: {e}")
-                    print(f"⚠️ T-test failed for Avg_Daily_FEED1: {e}")
-                    ttest_results.append({'variable': 'Avg_Daily_FEED1', 't_stat': np.nan, 'p_value': np.nan, 'significance': 'error', "cohen_d": np.nan})
-            else:
-                print("⚠️ Not enough data for Avg_Daily_FEED1. Skipping.")
-
-    else:
-        print("⚠️ avg_daily_feed is missing required columns or is empty.")
-
-    # Convert results to DataFrame
     ttest_df = pd.DataFrame(ttest_results)
-    print("✅ T-test analysis complete.")
 
-    # Outlier Detection
-    if not avg_daily_feed.empty and 'Avg_Daily_FEED1' in avg_daily_feed.columns:
-        Q1 = avg_daily_feed['Avg_Daily_FEED1'].quantile(0.25)
-        Q3 = avg_daily_feed['Avg_Daily_FEED1'].quantile(0.75)
-        IQR = Q3 - Q1
-        if pd.isna(IQR) or IQR == 0:
-            avg_daily_feed['Outlier'] = False
-            print("⚠️ IQR is 0 or NaN, marking all as non-outliers.")
-        else:
-            lower_bound = Q1 - 1.5 * IQR
-            upper_bound = Q3 + 1.5 * IQR
-            avg_daily_feed['Outlier'] = (avg_daily_feed['Avg_Daily_FEED1'] < lower_bound) | (avg_daily_feed['Avg_Daily_FEED1'] > upper_bound)
-            outlier_count = avg_daily_feed['Outlier'].sum()
-            print(f"✅ Outlier detection complete. {outlier_count} outliers found.")
-    elif not avg_daily_feed.empty:
+    # Outlier detection remains the same
+    Q1 = avg_daily_feed['Avg_Daily_FEED1'].quantile(0.25)
+    Q3 = avg_daily_feed['Avg_Daily_FEED1'].quantile(0.75)
+    IQR = Q3 - Q1
+    if pd.isna(IQR) or IQR == 0:
         avg_daily_feed['Outlier'] = False
-        print("⚠️ Avg_Daily_FEED1 column not found, marking all as non-outliers.")
+    else:
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+        avg_daily_feed['Outlier'] = (avg_daily_feed['Avg_Daily_FEED1'] < lower_bound) | (avg_daily_feed['Avg_Daily_FEED1'] > upper_bound)
 
-    # Return the analysis results
     return {
         'summary_df': summary_df,
         'ttest_df': ttest_df,
         'avg_daily_feed': avg_daily_feed,
         'cumulative_feed_data_for_plot': daily_feed_sum
     }
+
 
 def plot_dark_phase_analysis(df_dark_input_for_plot, analysis_results_for_plot, vars_to_analyze_for_plot=['DO2', 'DCO2', 'RER', 'HEAT', 'XTOT']):
     plots = {} 
