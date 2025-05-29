@@ -627,201 +627,294 @@ def plot_dark_phase_analysis(df_dark_input_for_plot, analysis_results_for_plot, 
     return plots
 
 # Analysis and Plotting Functions for Light Phase
-def perform_light_phase_analysis(df_light_input, vars_to_analyze=['DO2', 'DCO2', 'RER', 'HEAT', 'XTOT']):
+# def perform_light_phase_analysis(df_light_input, vars_to_analyze=['DO2', 'DCO2', 'RER', 'HEAT', 'XTOT']):
+#     if df_light_input is None or df_light_input.empty:
+#         return None
+    
+#     df_light = df_light_input.copy()
+#     print(df_light.head())
+#     print(df_light.columns)
+
+#     essential_cols = ['CHAN', 'Date', 'Genotype', 'FEED1']
+#     for col in essential_cols:
+#         if col not in df_light.columns:
+#             st.error(f"Light Phase Analysis: Essential column '{col}' is missing. Cannot proceed.")
+#             return None
+
+#     current_vars_to_analyze = [var for var in vars_to_analyze if var in df_light.columns]
+#     if not current_vars_to_analyze:
+#         st.error("Light Phase Analysis: None of the specified variables for analysis are present in the data.")
+#         return None
+        
+#     try:
+#         daily_feed_sum_light = df_light.groupby(['CHAN', 'Date', 'Genotype'])['FEED1'].sum().reset_index(name='Daily_Total_FEED1')
+#         daily_feed_sum_light = daily_feed_sum_light.sort_values(['CHAN', 'Date'])
+#     except KeyError as e:
+#         st.error(f"Light Phase Analysis: Error grouping for daily feed. Missing column: {e}")
+#         return None
+
+#     if 'CHAN' in daily_feed_sum_light.columns and 'Daily_Total_FEED1' in daily_feed_sum_light.columns:
+#         daily_feed_sum_light['Cumulative_Daily_FEED1'] = daily_feed_sum_light.groupby('CHAN')['Daily_Total_FEED1'].cumsum()
+#     else:
+#         daily_feed_sum_light['Cumulative_Daily_FEED1'] = np.nan
+
+#     avg_daily_feed_light = daily_feed_sum_light.groupby(['CHAN', 'Genotype'])['Daily_Total_FEED1'].mean().reset_index(name='Avg_Daily_FEED1')
+
+#     import numpy as np
+#     import pandas as pd
+#     summary_list_light = []
+#     df_light_wt_ko = df_light[df_light['Genotype'].isin(['WT', 'KO'])]
+#     print("df_light_wt_ko preview:")
+#     print(df_light_wt_ko.head())
+
+#     if df_light_wt_ko.empty:
+#         st.warning("Light Phase Analysis: No data found for WT or KO genotypes.")
+
+#     for var in current_vars_to_analyze:
+#         print(f"\n--- Analyzing variable: '{var}' ---")
+        
+#         if var not in df_light_wt_ko.columns:
+#             print(f"⚠️ Skipping '{var}' — not found in dataframe columns.")
+#             continue
+
+#         for genotype_to_check in ['WT', 'KO']: 
+#             print(f"Processing genotype: {genotype_to_check}")
+            
+#             if genotype_to_check in df_light_wt_ko['Genotype'].unique():
+#                 raw_data = df_light_wt_ko[df_light_wt_ko['Genotype'] == genotype_to_check][var]
+#                 print(f"Raw data (first 5 rows) for {var} - {genotype_to_check}:\n{raw_data.head().tolist()}")
+
+#                 data = pd.to_numeric(raw_data, errors='coerce').dropna()
+#                 print(f"Cleaned numeric data (first 5 rows) for {var} - {genotype_to_check}:\n{data.head().tolist()}")
+#                 print(f"Number of valid numeric entries: {len(data)}")
+
+#                 if not data.empty:
+#                     mean_val = data.mean()
+#                     sem_val = data.sem()
+#                     print(f"✅ Mean: {mean_val:.4f}, SEM: {sem_val:.4f}")
+#                     summary_list_light.append({
+#                         'variable': var,
+#                         'Genotype': genotype_to_check,
+#                         'mean': mean_val,
+#                         'sem': sem_val
+#                     })
+#                 else:
+#                     print(f"⚠️ No valid numeric data for {var} - {genotype_to_check}.")
+#                     summary_list_light.append({
+#                         'variable': var,
+#                         'Genotype': genotype_to_check,
+#                         'mean': np.nan,
+#                         'sem': np.nan
+#                     })
+#             else:
+#                 print(f"⚠️ Genotype '{genotype_to_check}' not found in data.")
+#                 summary_list_light.append({
+#                     'variable': var,
+#                     'Genotype': genotype_to_check,
+#                     'mean': np.nan,
+#                     'sem': np.nan
+#                 })
+
+#     print("\n✅ Summary List:")
+#     for entry in summary_list_light:
+#         print(entry)
+
+#     summary_df_light = pd.DataFrame(summary_list_light)
+#     print("\n✅ Summary DataFrame Preview:")
+#     print(summary_df_light.head())
+
+#     ttest_results_light = []
+
+#     print("🔍 Starting T-test analysis for light phase...")
+
+#     # Check for WT and KO in df_light_wt_ko
+#     if not df_light_wt_ko.empty and set(['WT', 'KO']).issubset(df_light_wt_ko['Genotype'].unique()):
+#         print("✅ Light phase data contains both WT and KO genotypes.")
+        
+#         for var in current_vars_to_analyze:
+#             print(f"\nAnalyzing variable: {var}")
+
+#             data_wt = pd.to_numeric(df_light_wt_ko[df_light_wt_ko['Genotype'] == 'WT'][var], errors='coerce').dropna()
+#             data_ko = pd.to_numeric(df_light_wt_ko[df_light_wt_ko['Genotype'] == 'KO'][var], errors='coerce').dropna()
+            
+#             print(f"WT sample size: {len(data_wt)}, KO sample size: {len(data_ko)}")
+
+#             if len(data_wt) >= 2 and len(data_ko) >= 2:
+#                 try:
+#                     t_stat, p_val = ttest_ind(data_wt, data_ko, equal_var=False, nan_policy='omit')
+#                     d = cohen_d(data_wt, data_ko)
+#                     star = significance_stars(p_val)
+#                     print(f"T-test success: t={t_stat:.3f}, p={p_val:.4g}, Cohen's d={d:.3f}, significance={star}")
+#                     ttest_results_light.append({
+#                         'variable': var,
+#                         't_stat': t_stat,
+#                         'p_value': p_val,
+#                         'significance': star,
+#                         'cohen_d': d
+#                     })
+#                 except Exception as e:
+#                     st.warning(f"T-test failed for variable {var} in light phase: {e}")
+#                     print(f"⚠️ T-test failed for {var}: {e}")
+#                     ttest_results_light.append({'variable': var, 't_stat': np.nan, 'p_value': np.nan, 'significance': 'error', "cohen_d": np.nan})
+#             else:
+#                 print(f"⚠️ Not enough data for variable {var} (WT: {len(data_wt)}, KO: {len(data_ko)}). Skipping.")
+#     else:
+#         print("⚠️ Light phase data is missing WT or KO genotype.")
+
+#     # T-test on average daily feed
+#     if not avg_daily_feed_light.empty and 'Genotype' in avg_daily_feed_light.columns and 'Avg_Daily_FEED1' in avg_daily_feed_light.columns:
+#         avg_daily_feed_light_wt_ko = avg_daily_feed_light[avg_daily_feed_light['Genotype'].isin(['WT', 'KO'])]
+#         if set(['WT', 'KO']).issubset(avg_daily_feed_light_wt_ko['Genotype'].unique()):
+#             avg_feed_wt = pd.to_numeric(avg_daily_feed_light_wt_ko[avg_daily_feed_light_wt_ko['Genotype'] == 'WT']['Avg_Daily_FEED1'], errors='coerce').dropna()
+#             avg_feed_ko = pd.to_numeric(avg_daily_feed_light_wt_ko[avg_daily_feed_light_wt_ko['Genotype'] == 'KO']['Avg_Daily_FEED1'], errors='coerce').dropna()
+
+#             print(f"\nAnalyzing Avg_Daily_FEED1 - WT: {len(avg_feed_wt)}, KO: {len(avg_feed_ko)}")
+
+#             if len(avg_feed_wt) >= 2 and len(avg_feed_ko) >= 2:
+#                 try:
+#                     t_stat_feed, p_val_feed = ttest_ind(avg_feed_wt, avg_feed_ko, equal_var=False, nan_policy='omit')
+#                     d_feed = cohen_d(avg_feed_wt, avg_feed_ko)
+#                     star_feed = significance_stars(p_val_feed)
+#                     print(f"Avg_Daily_FEED1 t={t_stat_feed:.3f}, p={p_val_feed:.4g}, d={d_feed:.3f}, sig={star_feed}")
+#                     ttest_results_light.append({
+#                         'variable': 'Avg_Daily_FEED1',
+#                         't_stat': t_stat_feed,
+#                         'p_value': p_val_feed,
+#                         'significance': star_feed,
+#                         'cohen_d': d_feed
+#                     })
+#                 except Exception as e:
+#                     st.warning(f"T-test failed for Avg_Daily_FEED1 in light phase: {e}")
+#                     print(f"⚠️ T-test failed for Avg_Daily_FEED1: {e}")
+#                     ttest_results_light.append({'variable': 'Avg_Daily_FEED1', 't_stat': np.nan, 'p_value': np.nan, 'significance': 'error', "cohen_d": np.nan})
+#             else:
+#                 print("⚠️ Not enough data for Avg_Daily_FEED1. Skipping.")
+#     else:
+#         print("⚠️ avg_daily_feed_light is missing required columns or is empty.")
+
+#     # Convert results to DataFrame
+#     ttest_df_light = pd.DataFrame(ttest_results_light)
+#     print("✅ T-test analysis for light phase complete.")
+
+#     # Outlier Detection
+#     if not avg_daily_feed_light.empty and 'Avg_Daily_FEED1' in avg_daily_feed_light.columns:
+#         Q1 = avg_daily_feed_light['Avg_Daily_FEED1'].quantile(0.25)
+#         Q3 = avg_daily_feed_light['Avg_Daily_FEED1'].quantile(0.75)
+#         IQR = Q3 - Q1
+#         if pd.isna(IQR) or IQR == 0:
+#             avg_daily_feed_light['Outlier'] = False
+#             print("⚠️ IQR is 0 or NaN, marking all as non-outliers.")
+#         else:
+#             lower_bound = Q1 - 1.5 * IQR
+#             upper_bound = Q3 + 1.5 * IQR
+#             avg_daily_feed_light['Outlier'] = (avg_daily_feed_light['Avg_Daily_FEED1'] < lower_bound) | (avg_daily_feed_light['Avg_Daily_FEED1'] > upper_bound)
+#             outlier_count = avg_daily_feed_light['Outlier'].sum()
+#             print(f"✅ Outlier detection complete. {outlier_count} outliers found.")
+#     elif not avg_daily_feed_light.empty:
+#         avg_daily_feed_light['Outlier'] = False
+#         print("⚠️ Avg_Daily_FEED1 column not found, marking all as non-outliers.")
+
+#     # Return the analysis results
+#     return {
+#         'summary_df': summary_df_light,
+#         'ttest_df': ttest_df_light,
+#         'avg_daily_feed': avg_daily_feed_light,
+#         'cumulative_feed_data_for_plot': daily_feed_sum_light
+#     }
+def perform_light_phase_analysis_updated(df_light_input, vars_to_analyze=['DO2', 'DCO2', 'RER', 'HEAT', 'XTOT']):
     if df_light_input is None or df_light_input.empty:
         return None
-    
+
     df_light = df_light_input.copy()
-    print(df_light.head())
-    print(df_light.columns)
 
     essential_cols = ['CHAN', 'Date', 'Genotype', 'FEED1']
     for col in essential_cols:
         if col not in df_light.columns:
-            st.error(f"Light Phase Analysis: Essential column '{col}' is missing. Cannot proceed.")
+            print(f"Essential column '{col}' is missing.")
             return None
 
     current_vars_to_analyze = [var for var in vars_to_analyze if var in df_light.columns]
     if not current_vars_to_analyze:
-        st.error("Light Phase Analysis: None of the specified variables for analysis are present in the data.")
-        return None
-        
-    try:
-        daily_feed_sum_light = df_light.groupby(['CHAN', 'Date', 'Genotype'])['FEED1'].sum().reset_index(name='Daily_Total_FEED1')
-        daily_feed_sum_light = daily_feed_sum_light.sort_values(['CHAN', 'Date'])
-    except KeyError as e:
-        st.error(f"Light Phase Analysis: Error grouping for daily feed. Missing column: {e}")
+        print("None of the specified variables for analysis are present in the data.")
         return None
 
-    if 'CHAN' in daily_feed_sum_light.columns and 'Daily_Total_FEED1' in daily_feed_sum_light.columns:
-        daily_feed_sum_light['Cumulative_Daily_FEED1'] = daily_feed_sum_light.groupby('CHAN')['Daily_Total_FEED1'].cumsum()
-    else:
-        daily_feed_sum_light['Cumulative_Daily_FEED1'] = np.nan
+    daily_avg = df_light.groupby(['CHAN', 'Date', 'Genotype'])[current_vars_to_analyze].mean().reset_index()
+
+    daily_feed_sum_light = df_light.groupby(['CHAN', 'Date', 'Genotype'])['FEED1'].sum().reset_index(name='Daily_Total_FEED1')
+    daily_feed_sum_light = daily_feed_sum_light.sort_values(['CHAN', 'Date'])
+    daily_feed_sum_light['Cumulative_Daily_FEED1'] = daily_feed_sum_light.groupby('CHAN')['Daily_Total_FEED1'].cumsum()
+
+    daily_avg = pd.merge(daily_avg, daily_feed_sum_light, on=['CHAN', 'Date', 'Genotype'], how='left')
 
     avg_daily_feed_light = daily_feed_sum_light.groupby(['CHAN', 'Genotype'])['Daily_Total_FEED1'].mean().reset_index(name='Avg_Daily_FEED1')
 
-    import numpy as np
-    import pandas as pd
     summary_list_light = []
-    df_light_wt_ko = df_light[df_light['Genotype'].isin(['WT', 'KO'])]
-    print("df_light_wt_ko preview:")
-    print(df_light_wt_ko.head())
-
-    if df_light_wt_ko.empty:
-        st.warning("Light Phase Analysis: No data found for WT or KO genotypes.")
+    df_light_wt_ko = daily_avg[daily_avg['Genotype'].isin(['WT', 'KO'])]
 
     for var in current_vars_to_analyze:
-        print(f"\n--- Analyzing variable: '{var}' ---")
-        
-        if var not in df_light_wt_ko.columns:
-            print(f"⚠️ Skipping '{var}' — not found in dataframe columns.")
-            continue
-
-        for genotype_to_check in ['WT', 'KO']: 
-            print(f"Processing genotype: {genotype_to_check}")
-            
-            if genotype_to_check in df_light_wt_ko['Genotype'].unique():
-                raw_data = df_light_wt_ko[df_light_wt_ko['Genotype'] == genotype_to_check][var]
-                print(f"Raw data (first 5 rows) for {var} - {genotype_to_check}:\n{raw_data.head().tolist()}")
-
-                data = pd.to_numeric(raw_data, errors='coerce').dropna()
-                print(f"Cleaned numeric data (first 5 rows) for {var} - {genotype_to_check}:\n{data.head().tolist()}")
-                print(f"Number of valid numeric entries: {len(data)}")
-
-                if not data.empty:
-                    mean_val = data.mean()
-                    sem_val = data.sem()
-                    print(f"✅ Mean: {mean_val:.4f}, SEM: {sem_val:.4f}")
-                    summary_list_light.append({
-                        'variable': var,
-                        'Genotype': genotype_to_check,
-                        'mean': mean_val,
-                        'sem': sem_val
-                    })
-                else:
-                    print(f"⚠️ No valid numeric data for {var} - {genotype_to_check}.")
-                    summary_list_light.append({
-                        'variable': var,
-                        'Genotype': genotype_to_check,
-                        'mean': np.nan,
-                        'sem': np.nan
-                    })
-            else:
-                print(f"⚠️ Genotype '{genotype_to_check}' not found in data.")
-                summary_list_light.append({
-                    'variable': var,
-                    'Genotype': genotype_to_check,
-                    'mean': np.nan,
-                    'sem': np.nan
-                })
-
-    print("\n✅ Summary List:")
-    for entry in summary_list_light:
-        print(entry)
+        for genotype_to_check in ['WT', 'KO']:
+            data = df_light_wt_ko[df_light_wt_ko['Genotype'] == genotype_to_check][var]
+            data = pd.to_numeric(data, errors='coerce').dropna()
+            summary_list_light.append({
+                'variable': var,
+                'Genotype': genotype_to_check,
+                'mean': data.mean() if not data.empty else np.nan,
+                'sem': data.sem() if not data.empty else np.nan
+            })
 
     summary_df_light = pd.DataFrame(summary_list_light)
-    print("\n✅ Summary DataFrame Preview:")
-    print(summary_df_light.head())
 
     ttest_results_light = []
+    for var in current_vars_to_analyze:
+        data_wt = df_light_wt_ko[df_light_wt_ko['Genotype'] == 'WT'][var].dropna()
+        data_ko = df_light_wt_ko[df_light_wt_ko['Genotype'] == 'KO'][var].dropna()
+        if len(data_wt) >= 2 and len(data_ko) >= 2:
+            t_stat, p_val = ttest_ind(data_wt, data_ko, equal_var=False, nan_policy='omit')
+            d = cohen_d(data_wt, data_ko)
+            star = significance_stars(p_val)
+            ttest_results_light.append({
+                'variable': var,
+                't_stat': t_stat,
+                'p_value': p_val,
+                'significance': star,
+                'cohen_d': d
+            })
 
-    print("🔍 Starting T-test analysis for light phase...")
+    avg_daily_feed_light_wt_ko = avg_daily_feed_light[avg_daily_feed_light['Genotype'].isin(['WT', 'KO'])]
+    if set(['WT', 'KO']).issubset(avg_daily_feed_light_wt_ko['Genotype'].unique()):
+        avg_feed_wt = avg_daily_feed_light_wt_ko[avg_daily_feed_light_wt_ko['Genotype'] == 'WT']['Avg_Daily_FEED1']
+        avg_feed_ko = avg_daily_feed_light_wt_ko[avg_daily_feed_light_wt_ko['Genotype'] == 'KO']['Avg_Daily_FEED1']
+        if len(avg_feed_wt) >= 2 and len(avg_feed_ko) >= 2:
+            t_stat_feed, p_val_feed = ttest_ind(avg_feed_wt, avg_feed_ko, equal_var=False, nan_policy='omit')
+            d_feed = cohen_d(avg_feed_wt, avg_feed_ko)
+            star_feed = significance_stars(p_val_feed)
+            ttest_results_light.append({
+                'variable': 'Avg_Daily_FEED1',
+                't_stat': t_stat_feed,
+                'p_value': p_val_feed,
+                'significance': star_feed,
+                'cohen_d': d_feed
+            })
 
-    # Check for WT and KO in df_light_wt_ko
-    if not df_light_wt_ko.empty and set(['WT', 'KO']).issubset(df_light_wt_ko['Genotype'].unique()):
-        print("✅ Light phase data contains both WT and KO genotypes.")
-        
-        for var in current_vars_to_analyze:
-            print(f"\nAnalyzing variable: {var}")
-
-            data_wt = pd.to_numeric(df_light_wt_ko[df_light_wt_ko['Genotype'] == 'WT'][var], errors='coerce').dropna()
-            data_ko = pd.to_numeric(df_light_wt_ko[df_light_wt_ko['Genotype'] == 'KO'][var], errors='coerce').dropna()
-            
-            print(f"WT sample size: {len(data_wt)}, KO sample size: {len(data_ko)}")
-
-            if len(data_wt) >= 2 and len(data_ko) >= 2:
-                try:
-                    t_stat, p_val = ttest_ind(data_wt, data_ko, equal_var=False, nan_policy='omit')
-                    d = cohen_d(data_wt, data_ko)
-                    star = significance_stars(p_val)
-                    print(f"T-test success: t={t_stat:.3f}, p={p_val:.4g}, Cohen's d={d:.3f}, significance={star}")
-                    ttest_results_light.append({
-                        'variable': var,
-                        't_stat': t_stat,
-                        'p_value': p_val,
-                        'significance': star,
-                        'cohen_d': d
-                    })
-                except Exception as e:
-                    st.warning(f"T-test failed for variable {var} in light phase: {e}")
-                    print(f"⚠️ T-test failed for {var}: {e}")
-                    ttest_results_light.append({'variable': var, 't_stat': np.nan, 'p_value': np.nan, 'significance': 'error', "cohen_d": np.nan})
-            else:
-                print(f"⚠️ Not enough data for variable {var} (WT: {len(data_wt)}, KO: {len(data_ko)}). Skipping.")
-    else:
-        print("⚠️ Light phase data is missing WT or KO genotype.")
-
-    # T-test on average daily feed
-    if not avg_daily_feed_light.empty and 'Genotype' in avg_daily_feed_light.columns and 'Avg_Daily_FEED1' in avg_daily_feed_light.columns:
-        avg_daily_feed_light_wt_ko = avg_daily_feed_light[avg_daily_feed_light['Genotype'].isin(['WT', 'KO'])]
-        if set(['WT', 'KO']).issubset(avg_daily_feed_light_wt_ko['Genotype'].unique()):
-            avg_feed_wt = pd.to_numeric(avg_daily_feed_light_wt_ko[avg_daily_feed_light_wt_ko['Genotype'] == 'WT']['Avg_Daily_FEED1'], errors='coerce').dropna()
-            avg_feed_ko = pd.to_numeric(avg_daily_feed_light_wt_ko[avg_daily_feed_light_wt_ko['Genotype'] == 'KO']['Avg_Daily_FEED1'], errors='coerce').dropna()
-
-            print(f"\nAnalyzing Avg_Daily_FEED1 - WT: {len(avg_feed_wt)}, KO: {len(avg_feed_ko)}")
-
-            if len(avg_feed_wt) >= 2 and len(avg_feed_ko) >= 2:
-                try:
-                    t_stat_feed, p_val_feed = ttest_ind(avg_feed_wt, avg_feed_ko, equal_var=False, nan_policy='omit')
-                    d_feed = cohen_d(avg_feed_wt, avg_feed_ko)
-                    star_feed = significance_stars(p_val_feed)
-                    print(f"Avg_Daily_FEED1 t={t_stat_feed:.3f}, p={p_val_feed:.4g}, d={d_feed:.3f}, sig={star_feed}")
-                    ttest_results_light.append({
-                        'variable': 'Avg_Daily_FEED1',
-                        't_stat': t_stat_feed,
-                        'p_value': p_val_feed,
-                        'significance': star_feed,
-                        'cohen_d': d_feed
-                    })
-                except Exception as e:
-                    st.warning(f"T-test failed for Avg_Daily_FEED1 in light phase: {e}")
-                    print(f"⚠️ T-test failed for Avg_Daily_FEED1: {e}")
-                    ttest_results_light.append({'variable': 'Avg_Daily_FEED1', 't_stat': np.nan, 'p_value': np.nan, 'significance': 'error', "cohen_d": np.nan})
-            else:
-                print("⚠️ Not enough data for Avg_Daily_FEED1. Skipping.")
-    else:
-        print("⚠️ avg_daily_feed_light is missing required columns or is empty.")
-
-    # Convert results to DataFrame
     ttest_df_light = pd.DataFrame(ttest_results_light)
-    print("✅ T-test analysis for light phase complete.")
 
-    # Outlier Detection
     if not avg_daily_feed_light.empty and 'Avg_Daily_FEED1' in avg_daily_feed_light.columns:
         Q1 = avg_daily_feed_light['Avg_Daily_FEED1'].quantile(0.25)
         Q3 = avg_daily_feed_light['Avg_Daily_FEED1'].quantile(0.75)
         IQR = Q3 - Q1
         if pd.isna(IQR) or IQR == 0:
             avg_daily_feed_light['Outlier'] = False
-            print("⚠️ IQR is 0 or NaN, marking all as non-outliers.")
         else:
             lower_bound = Q1 - 1.5 * IQR
             upper_bound = Q3 + 1.5 * IQR
             avg_daily_feed_light['Outlier'] = (avg_daily_feed_light['Avg_Daily_FEED1'] < lower_bound) | (avg_daily_feed_light['Avg_Daily_FEED1'] > upper_bound)
-            outlier_count = avg_daily_feed_light['Outlier'].sum()
-            print(f"✅ Outlier detection complete. {outlier_count} outliers found.")
-    elif not avg_daily_feed_light.empty:
-        avg_daily_feed_light['Outlier'] = False
-        print("⚠️ Avg_Daily_FEED1 column not found, marking all as non-outliers.")
 
-    # Return the analysis results
     return {
         'summary_df': summary_df_light,
         'ttest_df': ttest_df_light,
         'avg_daily_feed': avg_daily_feed_light,
         'cumulative_feed_data_for_plot': daily_feed_sum_light
     }
-
 def plot_light_phase_analysis(df_light_input_for_plot, analysis_results_for_plot, vars_to_analyze_for_plot=['DO2', 'DCO2', 'RER', 'HEAT', 'XTOT']):
     plots = {}
     if not analysis_results_for_plot: return plots
@@ -1018,32 +1111,147 @@ def plot_light_phase_analysis(df_light_input_for_plot, analysis_results_for_plot
     
     return plots
 
+# def perform_anova_analysis(df_light_input, df_dark_input, vars_to_analyze=['DO2', 'DCO2', 'RER', 'HEAT', 'XTOT', 'FEED1']):
+#     print("Starting ANOVA analysis...")
+#     if df_light_input is None or df_light_input.empty or df_dark_input is None or df_dark_input.empty:
+#         print("Warning: Light or Dark phase data is missing or empty.")
+#         st.warning("ANOVA: Light or Dark phase data is missing or empty.")
+#         return None
+
+#     df_light = df_light_input.copy()
+#     df_dark = df_dark_input.copy()
+#     print(f"Initial Light phase data shape: {df_light.shape}")
+#     print(f"Initial Dark phase data shape: {df_dark.shape}")
+
+#     # Ensure numeric columns
+#     for df_phase in [df_light, df_dark]:
+#         if 'FEED1' in df_phase.columns:
+#             df_phase['FEED1'] = pd.to_numeric(df_phase['FEED1'], errors='coerce')
+#         for var_an in vars_to_analyze:
+#             if var_an in df_phase.columns:
+#                 df_phase[var_an] = pd.to_numeric(df_phase[var_an], errors='coerce')
+
+#     df_dark['Phase'] = 'Dark'
+#     df_light['Phase'] = 'Light'
+
+#     df_combined = pd.concat([df_dark, df_light], ignore_index=True)
+#     print(f"Combined data shape before genotype filtering: {df_combined.shape}")
+
+#     df_combined = df_combined[df_combined['Genotype'].isin(['WT', 'KO'])]
+#     print(f"Combined data shape after filtering for WT/KO genotypes: {df_combined.shape}")
+
+#     if df_combined.empty:
+#         print("Warning: Combined data is empty after filtering for WT/KO genotypes.")
+#         st.warning("ANOVA: Combined data is empty after filtering for WT/KO genotypes.")
+#         return None
+
+#     df_combined['Genotype'] = pd.Categorical(df_combined['Genotype'], categories=['WT', 'KO'], ordered=True)
+#     df_combined['Phase'] = pd.Categorical(df_combined['Phase'], categories=['Light', 'Dark'], ordered=True)
+
+#     anova_results = []
+
+#     for var in vars_to_analyze:
+#         print(f"\nAnalyzing variable: {var}")
+#         if var not in df_combined.columns:
+#             print(f"Warning: Variable '{var}' not found in combined data. Skipping.")
+#             st.warning(f"ANOVA: Variable '{var}' not found in combined data. Skipping.")
+#             continue
+
+#         if df_combined[var].isnull().all():
+#             print(f"Warning: Variable '{var}' is all NaN. Skipping.")
+#             st.warning(f"ANOVA: Variable '{var}' is all NaN. Skipping.")
+#             continue
+
+#         group_counts = df_combined.dropna(subset=[var]).groupby(['Genotype', 'Phase']).size()
+#         print(f"Group counts for '{var}':\n{group_counts}")
+
+#         if len(group_counts) < 4 or (group_counts < 2).any():
+#             print(f"Warning: Insufficient data for variable '{var}' across Genotype/Phase combinations. Skipping.")
+#             st.warning(f"ANOVA: Insufficient data for variable '{var}' across Genotype/Phase combinations. Skipping.\nGroup counts:\n{group_counts}")
+#             continue
+
+#         try:
+#             # Removed backticks here to fix formula parsing error
+#             formula = f"{var} ~ C(Genotype) + C(Phase) + C(Genotype):C(Phase)"
+#             model = ols(formula, data=df_combined).fit()
+#             anova_table = sm.stats.anova_lm(model, typ=2)
+#             print(f"ANOVA table for {var}:\n{anova_table}")
+
+#             res_dict = {'Variable': var}
+#             if 'C(Genotype)' in anova_table.index:
+#                 res_dict['F_Genotype'] = anova_table.loc['C(Genotype)', 'F']
+#                 res_dict['p_Genotype'] = anova_table.loc['C(Genotype)', 'PR(>F)']
+#             if 'C(Phase)' in anova_table.index:
+#                 res_dict['F_Phase'] = anova_table.loc['C(Phase)', 'F']
+#                 res_dict['p_Phase'] = anova_table.loc['C(Phase)', 'PR(>F)']
+#             if 'C(Genotype):C(Phase)' in anova_table.index:
+#                 res_dict['F_Interaction'] = anova_table.loc['C(Genotype):C(Phase)', 'F']
+#                 res_dict['p_Interaction'] = anova_table.loc['C(Genotype):C(Phase)', 'PR(>F)']
+
+#             anova_results.append(res_dict)
+#         except Exception as e:
+#             print(f"Error during ANOVA for variable {var}: {e}")
+#             st.error(f"ANOVA error for variable {var}: {e}")
+#             anova_results.append({
+#                 'Variable': var, 'F_Genotype': np.nan, 'p_Genotype': np.nan,
+#                 'F_Phase': np.nan, 'p_Phase': np.nan,
+#                 'F_Interaction': np.nan, 'p_Interaction': np.nan,
+#                 'Error': str(e)
+#             })
+
+#     if not anova_results:
+#         print("Warning: No ANOVA results generated. Check input data and variables.")
+#         st.warning("ANOVA: No results were generated. Check data and variable selection.")
+#         return None
+
+#     anova_df = pd.DataFrame(anova_results)
+
+#     # Add significance stars
+#     if 'p_Genotype' in anova_df.columns:
+#         anova_df['sig_Genotype'] = anova_df['p_Genotype'].apply(significance_stars)
+#     if 'p_Phase' in anova_df.columns:
+#         anova_df['sig_Phase'] = anova_df['p_Phase'].apply(significance_stars)
+#     if 'p_Interaction' in anova_df.columns:
+#         anova_df['sig_Interaction'] = anova_df['p_Interaction'].apply(significance_stars)
+
+#     print("ANOVA analysis completed successfully.")
+#     return anova_df
 def perform_anova_analysis(df_light_input, df_dark_input, vars_to_analyze=['DO2', 'DCO2', 'RER', 'HEAT', 'XTOT', 'FEED1']):
+    import pandas as pd
+    import numpy as np
+    from statsmodels.formula.api import ols
+    import statsmodels.api as sm
+    from scipy.stats import f_oneway
+
     print("Starting ANOVA analysis...")
+    
     if df_light_input is None or df_light_input.empty or df_dark_input is None or df_dark_input.empty:
         print("Warning: Light or Dark phase data is missing or empty.")
         st.warning("ANOVA: Light or Dark phase data is missing or empty.")
         return None
 
-    df_light = df_light_input.copy()
-    df_dark = df_dark_input.copy()
-    print(f"Initial Light phase data shape: {df_light.shape}")
-    print(f"Initial Dark phase data shape: {df_dark.shape}")
-
     # Ensure numeric columns
-    for df_phase in [df_light, df_dark]:
+    for df_phase in [df_light_input, df_dark_input]:
         if 'FEED1' in df_phase.columns:
             df_phase['FEED1'] = pd.to_numeric(df_phase['FEED1'], errors='coerce')
-        for var_an in vars_to_analyze:
-            if var_an in df_phase.columns:
-                df_phase[var_an] = pd.to_numeric(df_phase[var_an], errors='coerce')
+        for var in vars_to_analyze:
+            if var in df_phase.columns:
+                df_phase[var] = pd.to_numeric(df_phase[var], errors='coerce')
 
-    df_dark['Phase'] = 'Dark'
+    group_cols = ['CHAN', 'Date', 'Genotype']
+    
+    # Aggregate to daily means
+    df_light = df_light_input.groupby(group_cols)[vars_to_analyze].mean().reset_index()
     df_light['Phase'] = 'Light'
+    
+    df_dark = df_dark_input.groupby(group_cols)[vars_to_analyze].mean().reset_index()
+    df_dark['Phase'] = 'Dark'
 
-    df_combined = pd.concat([df_dark, df_light], ignore_index=True)
+    # Combine data
+    df_combined = pd.concat([df_light, df_dark], ignore_index=True)
     print(f"Combined data shape before genotype filtering: {df_combined.shape}")
 
+    # Filter to WT and KO genotypes
     df_combined = df_combined[df_combined['Genotype'].isin(['WT', 'KO'])]
     print(f"Combined data shape after filtering for WT/KO genotypes: {df_combined.shape}")
 
@@ -1052,6 +1260,7 @@ def perform_anova_analysis(df_light_input, df_dark_input, vars_to_analyze=['DO2'
         st.warning("ANOVA: Combined data is empty after filtering for WT/KO genotypes.")
         return None
 
+    # Set Genotype and Phase as categorical for modeling
     df_combined['Genotype'] = pd.Categorical(df_combined['Genotype'], categories=['WT', 'KO'], ordered=True)
     df_combined['Phase'] = pd.Categorical(df_combined['Phase'], categories=['Light', 'Dark'], ordered=True)
 
@@ -1078,7 +1287,6 @@ def perform_anova_analysis(df_light_input, df_dark_input, vars_to_analyze=['DO2'
             continue
 
         try:
-            # Removed backticks here to fix formula parsing error
             formula = f"{var} ~ C(Genotype) + C(Phase) + C(Genotype):C(Phase)"
             model = ols(formula, data=df_combined).fit()
             anova_table = sm.stats.anova_lm(model, typ=2)
@@ -1096,6 +1304,7 @@ def perform_anova_analysis(df_light_input, df_dark_input, vars_to_analyze=['DO2'
                 res_dict['p_Interaction'] = anova_table.loc['C(Genotype):C(Phase)', 'PR(>F)']
 
             anova_results.append(res_dict)
+
         except Exception as e:
             print(f"Error during ANOVA for variable {var}: {e}")
             st.error(f"ANOVA error for variable {var}: {e}")
