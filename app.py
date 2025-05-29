@@ -824,7 +824,7 @@ def plot_dark_phase_analysis(df_dark_input_for_plot, analysis_results_for_plot, 
 #         'avg_daily_feed': avg_daily_feed_light,
 #         'cumulative_feed_data_for_plot': daily_feed_sum_light
 #     }
-def perform_light_phase_analysis_updated(df_light_input, vars_to_analyze=['DO2', 'DCO2', 'RER', 'HEAT', 'XTOT']):
+def perform_light_phase_analysis(df_light_input, vars_to_analyze=['DO2', 'DCO2', 'RER', 'HEAT', 'XTOT']):
     import numpy as np
     from scipy.stats import ttest_ind
     
