@@ -825,6 +825,9 @@ def plot_dark_phase_analysis(df_dark_input_for_plot, analysis_results_for_plot, 
 #         'cumulative_feed_data_for_plot': daily_feed_sum_light
 #     }
 def perform_light_phase_analysis_updated(df_light_input, vars_to_analyze=['DO2', 'DCO2', 'RER', 'HEAT', 'XTOT']):
+    import numpy as np
+    from scipy.stats import ttest_ind
+    
     if df_light_input is None or df_light_input.empty:
         return None
 
@@ -835,6 +838,15 @@ def perform_light_phase_analysis_updated(df_light_input, vars_to_analyze=['DO2',
         if col not in df_light.columns:
             print(f"Essential column '{col}' is missing.")
             return None
+
+    # Convert vars_to_analyze columns to numeric (coerce errors)
+    for var in vars_to_analyze:
+        if var in df_light.columns:
+            df_light[var] = pd.to_numeric(df_light[var], errors='coerce')
+
+    # Also convert FEED1 to numeric
+    if 'FEED1' in df_light.columns:
+        df_light['FEED1'] = pd.to_numeric(df_light['FEED1'], errors='coerce')
 
     current_vars_to_analyze = [var for var in vars_to_analyze if var in df_light.columns]
     if not current_vars_to_analyze:
@@ -918,6 +930,7 @@ def perform_light_phase_analysis_updated(df_light_input, vars_to_analyze=['DO2',
         'avg_daily_feed': avg_daily_feed_light,
         'cumulative_feed_data_for_plot': daily_feed_sum_light
     }
+
 def plot_light_phase_analysis(df_light_input_for_plot, analysis_results_for_plot, vars_to_analyze_for_plot=['DO2', 'DCO2', 'RER', 'HEAT', 'XTOT']):
     plots = {}
     if not analysis_results_for_plot: return plots
@@ -1225,6 +1238,7 @@ def perform_anova_analysis(df_light_input, df_dark_input, vars_to_analyze=['DO2'
     from statsmodels.formula.api import ols
     import statsmodels.api as sm
     from scipy.stats import f_oneway
+    import streamlit as st  # assuming st is used in your environment
 
     print("Starting ANOVA analysis...")
     
@@ -1233,7 +1247,7 @@ def perform_anova_analysis(df_light_input, df_dark_input, vars_to_analyze=['DO2'
         st.warning("ANOVA: Light or Dark phase data is missing or empty.")
         return None
 
-    # Ensure numeric columns
+    # Convert columns to numeric to avoid aggregation errors
     for df_phase in [df_light_input, df_dark_input]:
         if 'FEED1' in df_phase.columns:
             df_phase['FEED1'] = pd.to_numeric(df_phase['FEED1'], errors='coerce')
@@ -1335,6 +1349,7 @@ def perform_anova_analysis(df_light_input, df_dark_input, vars_to_analyze=['DO2'
 
     print("ANOVA analysis completed successfully.")
     return anova_df
+
 
 from statannotations.Annotator import Annotator
 
