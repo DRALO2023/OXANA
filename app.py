@@ -336,7 +336,10 @@ def perform_dark_phase_analysis(df_dark_input, vars_to_analyze=['DO2', 'DCO2', '
     if not current_vars_to_analyze:
         st.error("Dark Phase Analysis: None of the specified variables for analysis are present in the data.")
         return None 
-
+    # Convert vars to numeric before grouping
+    for var in current_vars_to_analyze:
+        if var in df_dark.columns:
+            df_dark[var] = pd.to_numeric(df_dark[var], errors='coerce')
     # Step 1: Compute daily averages per animal (CHAN)
     daily_avg = df_dark.groupby(['CHAN', 'Date', 'Genotype'])[current_vars_to_analyze].mean().reset_index()
 
